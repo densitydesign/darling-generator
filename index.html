@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+
+
+  <style>
+    svg {
+      background-color: #f5f5f5;
+    }
+    .country {
+      fill: transparent;
+      stroke: black;
+      stroke-width: 0.5px;
+    }
+  </style>
+</head>
+
+<body>
+  <svg></svg>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/5.1.5/turf.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+  <script type="text/javascript">
+  function init() {
+    Tabletop.init( { key: 'https://docs.google.com/spreadsheets/d/1N0EzFyEJaK_xtfVMceUQS089ezwDTXrNDIzlfe_R_Cc/edit?usp=sharing',
+                     callback: function(data, tabletop) {
+                         makeDorling(data);
+                     },
+                     simpleSheet: false } )
+    }
+    window.addEventListener('DOMContentLoaded', init)
+
+    function makeDorling(spreadsheet) {
+      console.log(spreadsheet);
+
+      let settings = spreadsheet.settings.elements[0];
+      let data = spreadsheet.data.elements;
+
+      data = data.filter(function(d){
+        return d.size;
+      })
+
+      console.log(settings);
+      console.log(data);
+
+      let width = settings.width;
+      let height = settings.height;
+      let svg = d3.select('svg').attr('width',settings.width).attr('height',settings.height);
+
+      var nodes = [];
+      var mapData;
+
+      var simulation = d3.forceSimulation(nodes)
+          .force("x", d3.forceX(function(d) { return d.x }))
+          .force("y", d3.forceY(function(d) { return d.y }))
+          .force("collide", d3.forceCollide(function(d) { return d.size }))
+          // general force settings
+          .alpha(1)
+          .alphaDecay(0.01)
+          .on("tick", ticked)
+
+      // define projection and path-generator variables
+      let projection = d3.geoMercator(),
+          path = d3.geoPath().projection(projection);　
+
+      let map = svg.append('g').classed('map', true)
+      let country = map.selectAll('.country')
+
+      let node = svg.append("g").classed('nodes', true).selectAll(".node")
+
+      d3.json('countries-coastline-10km.geo.json').then(function(world) {
+        console.log(world);
+
+        projection.fitSize([width, height], world);
+        //
+        // console.table(world.features.map(function(d){
+        //   return d.properties.A3
+        // }))
+
+        world.features.forEach(function(d){
+          let polygon;
+          if(d.geometry.type == "MultiPolygon") {
+            polygon = turf.multiPolygon(d.geometry.coordinates);
+          } else {
+            polygon = turf.polygon(d.geometry.coordinates);
+          }
+          let center = turf.centroid(polygon);
+          // console.log(center.geometry.coordinates);
+          d.properties.center = center;
+        })
+
+        nodes = data.map(function(d){
+          // console.log(d['ISO Alpha 3 code'])
+          let thisLon = world.features.filter(function(e){ return e.properties.A3 == d['ISO Alpha 3 code'] })[0].properties.center.geometry.coordinates[0]
+          let thisLat = world.features.filter(function(e){ return e.properties.A3 == d['ISO Alpha 3 code'] })[0].properties.center.geometry.coordinates[1]
+
+          let projectedCoords = projection([thisLon, thisLat]);
+
+          d.x = projectedCoords[0]
+          d.y = projectedCoords[1]
+
+          return d;
+        })
+
+        console.log(nodes)
+
+
+
+        country = country.data(world.features)
+        country.exit().remove()
+        country = country.enter().append('path')
+            .classed('country', true)
+            .attr('d', path)
+            .merge(country);
+
+        node = node.data(nodes)
+        node.exit().remove()
+        node = node.enter().append('circle')
+            .classed('node', true)
+            .attr("cx", function(d) { return d.x })
+            .attr("cy", function(d) { return d.y })
+            .attr('r', function(d){ return d.size})
+            .merge(node)
+
+        simulation.nodes(nodes).alpha(1).restart();
+
+
+      });
+
+      function ticked() {
+          node.attr("cx", function(d) { return d.x })
+              .attr("cy", function(d) { return d.y })
+      }
+
+    }
+
+  </script>
+</body>
