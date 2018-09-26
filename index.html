@@ -89,7 +89,7 @@
                 console.log(world);
 
                 let line;
-                if (settings.world_zoom.toLowerCase() === 'true') {
+                if (settings.zoom === 'ENTIRE WORLD') {
                     projection.fitSize([width, height], world);
                 } else {
                     let coordinatesArray = data.map(function(d){
