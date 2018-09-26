@@ -5,15 +5,7 @@
     <title>Darlin' map generator</title>
 
     <style>
-        /* svg {
-      background-color: #f5f5f5;
-    } */
-    /* .country {
-      fill: transparent;
-      stroke: black;
-      stroke-width: 0.5px;
-    } */
-  </style>
+    </style>
 </head>
 
 <body>
@@ -51,8 +43,10 @@
             let width = settings.width;
             let height = settings.height;
             let svg = d3.select('svg')
-                .style('width', settings.width+'px')
-                .style('height', settings.height+'px')
+                .attr('xmlns','http://www.w3.org/2000/svg')
+                .attr('version','1.1')
+                .attr('width', settings.width)
+                .attr('height', settings.height)
                 .style('background-color','#EAECEE');
 
             // define scale for dorling circles based on settings and data
