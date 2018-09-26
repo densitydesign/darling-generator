@@ -18,7 +18,6 @@
 
 <body>
     <svg></svg>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/5.1.5/turf.min.js" charset="utf-8"></script> -->
     <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js' charset="utf-8"></script>
     <script src="https://unpkg.com/topojson@3.0.2" charset="utf-8"></script>
@@ -79,30 +78,24 @@
 
             let node = svg.append("g").classed('nodes', true).selectAll(".node");
 
-            d3.json('50m.json').then(function(topoWorld) {
+            d3.json('110m.json').then(function(topoWorld) {
                 // console.log(topoWorld);
                 let world = topojson.feature(topoWorld, topoWorld.objects.countries);
                 // console.log(world);
 
                 projection.fitSize([width, height], world);
 
-                world.features.forEach(function(feature) {
-                    feature.centroid = path.centroid(feature);
-                    // console.log(feature);
-                })
+                // world.features.forEach(function(feature) {
+                //     feature.centroid = path.centroid(feature);
+                //     // console.log(feature);
+                // })
 
                 nodes = data.map(function(d){
-                    let coordinates = world.features.find(element => element.id === d['id']);
                     // console.log(d['country']);
-                    // console.log(coordinates);
+                    let coordinates = projection([d.lon, d.lat]);
 
-                    if (coordinates) {
-                        d.x = coordinates.centroid[0];
-                        d.y = coordinates.centroid[1];
-                    } else {
-                        d.x = 0;
-                        d.y = 0;
-                    }
+                    d.x = coordinates[0];
+                    d.y = coordinates[1];
 
                     return d;
                 })
