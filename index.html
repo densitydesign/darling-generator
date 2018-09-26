@@ -2,7 +2,7 @@
 
 <head>
     <meta charset="utf-8">
-
+    <title>Darlin' map generator</title>
 
     <style>
         svg {
@@ -97,11 +97,6 @@
                     line = turf.lineString(coordinatesArray);
                     projection.fitExtent([[50, 50], [width-50, height-50]], line);
                 }
-
-                // world.features.forEach(function(feature) {
-                //     feature.centroid = path.centroid(feature);
-                //     // console.log(feature);
-                // })
 
                 nodes = data.map(function(d){
                     // console.log(d['country']);
