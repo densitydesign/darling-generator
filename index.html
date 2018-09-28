@@ -5,11 +5,37 @@
     <title>Darlin' map generator</title>
 
     <style>
+        .title {
+            margin-top: 40px;
+        }
+        .title span {
+            position: relative;
+            text-decoration: line-through;
+            font-style: italic;
+            color: #566573;
+        }
+        .title span::after {
+            content: "Darlin'";
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #17202A;
+            font-style: normal;
+        }
     </style>
 </head>
 
 <body>
-    <p>Set up the tool using this <a href="https://docs.google.com/spreadsheets/d/1Ibuf8phEuP4QczVYXMoTyrLycBwRECy2fYT-KOIBUGE/edit?usp=sharing" target="_blank">spreadsheet</a></p>
+    <main>
+        <h1 class="title"><span>Dorling</span> Map Generator</h1>
+        <p>Read the <a href="instructions.html">instructions</a> to learn how to set up your Google spreadsheet correctly.</p>
+        <div class="form">
+            <span>Link to spreadsheet:</span>
+            <input type="text" id="spreadsheet-link" name="spreadsheet-link" placeholder="paste you Google spreadsheet here" size="30">
+            <button type="button" name="button" onclick="init()">Load Spreadsheet</button>
+        </div>
+        <p>Alternatively, try out the tool using this <a href="https://docs.google.com/spreadsheets/d/1Ibuf8phEuP4QczVYXMoTyrLycBwRECy2fYT-KOIBUGE/edit?usp=sharing" target="_blank">spreadsheet</a></p>
+    </main>
     <svg></svg>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/5.1.5/turf.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
@@ -17,15 +43,18 @@
     <script src="https://unpkg.com/topojson@3.0.2" charset="utf-8"></script>
     <script type="text/javascript">
         function init() {
+
+            let link = document.getElementById('spreadsheet-link').value;
+            // console.log(link);
+
             Tabletop.init({
-                key: 'https://docs.google.com/spreadsheets/d/1Ibuf8phEuP4QczVYXMoTyrLycBwRECy2fYT-KOIBUGE/edit?usp=sharing',
+                key: link,
                 callback: function(data, tabletop) {
                     makeDorling(data);
                 },
                 simpleSheet: false
             })
         }
-        window.addEventListener('DOMContentLoaded', init)
 
         function makeDorling(spreadsheet) {
             console.log(spreadsheet);
