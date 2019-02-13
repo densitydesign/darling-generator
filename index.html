@@ -45,7 +45,7 @@
         function init() {
 
             let link = document.getElementById('spreadsheet-link').value;
-            // console.log(link);
+            console.log(link);
 
             Tabletop.init({
                 key: link,
@@ -81,6 +81,25 @@
             // define scale for dorling circles based on settings and data
             let areaMax = d3.max(data, d => +d.size);
             let areaScale = d3.scaleSqrt().domain([0, areaMax]).range([0, +settings.area_max]);
+            let categories, colorScale;
+            if (settings['color-scale'] == 'category') {
+              // Get list of categories
+              categories = d3.nest()
+                  .key(function(d){ return d.category })
+                  .entries(data)
+                  .map(function(d){ return d.key});
+
+              let colorsCategories = []
+              // Generate one color for each element in category array
+              categories.forEach(function(d,i){
+                // console.log(i,(categories.length),i/(categories.length))
+                colorsCategories.push(d3.interpolateRainbow(i/categories.length))
+              })
+
+              colorScale = d3.scaleOrdinal()
+                  .domain(categories)
+                  .range(colorsCategories);
+            }
 
             let nodes = [];
             let mapData;
@@ -93,8 +112,8 @@
                     return d.y;
                 }))
                 .force("collide", d3.forceCollide(function(d) {
-                    return areaScale(+d.size);
-                }))
+                    return areaScale(+d.size+.25);
+                }).strength(2).iterations(4))
                 .on("tick", ticked);
 
             // define projection and path-generator variables
@@ -105,6 +124,29 @@
             let country = map.selectAll('.country');
 
             let node = svg.append("g").classed('nodes', true).selectAll(".node");
+            let label = svg.append("g").classed('labels', true).selectAll(".label");
+
+            if (settings['color-scale'] == 'category') {
+              let legend = svg.append("g").classed('legend', true).attr('transform','translate(10, 10)')
+
+              let categoryItem = legend.selectAll(".category-item")
+                  .data(categories)
+                  .enter()
+                  .append('g')
+                  .attr('class', function(d){ return 'category-'+d });
+
+              categoryItem.append('circle')
+                  .attr('fill', function(d){ return colorScale(d); })
+                  .attr('r', 5)
+                  .attr('cx', 0)
+                  .attr('cy', function(d,i){ return i*20 });
+
+              categoryItem.append('text')
+                  .text(function(d){ return d; })
+                  .attr('x', 10)
+                  .attr('y', function(d,i){ return 5+i*20 })
+            }
+
 
             d3.json('50m.json').then(function(topoWorld) {
                 // console.log(topoWorld);
@@ -150,12 +192,40 @@
                 node.exit().remove();
                 node = node.enter().append('circle')
                     .classed('node', true)
-                    .attr('id', function(d) { return d.element })
+                    .attr('id', function(d) { return 'circle-'+d.element.replace(/\s/g, "-").replace(/,/g, "") })
                     .merge(node)
                     .attr("cx", function(d) { return d.x })
                     .attr("cy", function(d) { return d.y })
                     .attr('r', function(d){ return areaScale(+d.size)})
-                    .attr('fill','#17202A')
+                    .attr('fill', function(d){ return settings['color-scale']=='category' ? colorScale(d.category) : '#17202A'; })
+
+                let labelsData = d3.nest()
+                    .key(function(d){ return d.element })
+                    .rollup(function(leaves){
+                      console.log(leaves);
+                      return {
+                        'element': leaves[0].element,
+                        'x': leaves[0].x,
+                        'y': leaves[0].y
+                      }
+                    })
+                    .entries(nodes)
+                    .map(function(d){
+                      return d.value
+                    })
+
+                console.log(labelsData)
+
+                label = label.data(labelsData);
+                label.exit().remove();
+                label = label.enter().append('text')
+                    .classed('label', true)
+                    .attr('id', function(d) { return 'label-'+d.element.replace(/\s/g, "-").replace(/,/g, "") })
+                    .merge(label)
+                    .attr("x", function(d) { return d.x })
+                    .attr("y", function(d) { return d.y })
+                    .text(function(d){ return d.element; })
+
 
                 simulation.nodes(nodes).alpha(1).restart();
 
